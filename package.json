@@ -1,0 +1,25 @@
+{
+  "name": "blog-react-backend",
+  "version": "1.0.0",
+  "description": "Back-end part for blog web application building using React",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "develop": "nodemon src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jerzka/blog-React-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jerzka/blog-React-backend/issues"
+  },
+  "homepage": "https://github.com/jerzka/blog-React-backend#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
