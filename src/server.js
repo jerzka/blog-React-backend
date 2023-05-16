@@ -24,7 +24,25 @@ app.use(async (req, res, next) => {
         }
     }
 
+    //providing a default value if an auth token was not included
+    req.user = req.user || {};
     next();
+});
+
+app.get('/api/projects/:name', async (req, res) =>{
+    const { name } = req.params;
+    const { uid } = req.user;
+
+    const project = await db.collection('projects').findOne({ name });
+
+    if(project){
+        const upvoteIds = project.upvoteIds || [];
+        project.canUpvote  = uid && !upvoteIds.includes(uid);
+        res.json(project);
+    }
+    else{
+        res.sendStatus(404);
+    }
 });
 
 app.get('/api/articles/:name', async (req, res) =>{
@@ -35,7 +53,7 @@ app.get('/api/articles/:name', async (req, res) =>{
 
     if(article){
         const upvoteIds = article.upvoteIds || [];
-        article.canUpvode  = uid && !upvoteIds.includes(uid);
+        article.canUpvote  = uid && !upvoteIds.includes(uid);
         res.json(article);
     }
     else{
@@ -43,12 +61,27 @@ app.get('/api/articles/:name', async (req, res) =>{
     }
 });
 
-app.use((req, res, next) => {
-    if(req.user){
-        next();
-    } else{
-        res.sendStatus(401);
-    }
+
+app.put('/api/projects/:name/upvote', async (req, res) => {
+    const { name } = req.params;
+    const { uid } = req.user;
+
+    const project = await db.collection('projects').findOne({ name });
+
+    if(project){
+        const upvoteIds = project.upvoteIds || [];
+        const canUpvote  = uid && !upvoteIds.includes(uid);
+        if(canUpvote){
+            await db.collection('projects').updateOne({ name }, {
+                $inc: { upvotes: 1 },
+                $push: {upvoteIds: uid}
+            });
+        }
+
+        const updatedProject = await db.collection('projects').findOne({ name });
+        res.json(updatedProject);
+    } else
+        res.send('The project dosn\'t exist');
 });
 
 app.put('/api/articles/:name/upvote', async (req, res) => {
@@ -59,8 +92,8 @@ app.put('/api/articles/:name/upvote', async (req, res) => {
 
     if(article){
         const upvoteIds = article.upvoteIds || [];
-        const canUpvode  = uid && !upvoteIds.includes(uid);
-        if(canUpvode){
+        const canUpvote  = uid && !upvoteIds.includes(uid);
+        if(canUpvote){
             await db.collection('articles').updateOne({ name }, {
                 $inc: { upvotes: 1 },
                 $push: {upvoteIds: uid}
@@ -71,6 +104,31 @@ app.put('/api/articles/:name/upvote', async (req, res) => {
         res.json(updatedArticle);
     } else
         res.send('The article dosn\'t exist');
+});
+
+app.use((req, res, next) => {
+    if(req.user){
+        next();
+    } else{
+        res.sendStatus(401);
+    }
+});
+
+app.post('/api/projects/:name/comments', async (req, res) => {
+    const { name } = req.params;
+    const { text } = req.body;
+    const { email } = req.user;
+
+    await db.collection('projects').updateOne({ name }, {
+        $push: { comments: { postedBy: email, text }},
+    });
+
+    const project = await db.collection('projects').findOne({ name });
+
+    if(project) {
+        res.json(project);
+    } else
+        res.send('The project dosn\'t exist');
 });
 
 app.post('/api/articles/:name/comments', async (req, res) => {
@@ -88,7 +146,7 @@ app.post('/api/articles/:name/comments', async (req, res) => {
         res.json(article);
     } else
         res.send('The article dosn\'t exist');
-})
+});
 
 connectToDb(() => {
     console.log("Successfully connected to database!");
