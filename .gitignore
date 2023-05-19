@@ -5,6 +5,8 @@
 
 # production
 /build
+app.yaml
+prod-env.yaml
 
 # misc
 .DS_Store
@@ -20,3 +22,5 @@ yarn-error.log*
 
 /mongo-db-data
 credentials.json
+
+
